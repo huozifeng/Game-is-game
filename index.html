@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海龟汤 - 文字推理游戏</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0c0c1d, #1a1a3a, #0c0c1d);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></svg>');
+            z-index: -1;
+            opacity: 0.5;
+        }
+        
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(10, 10, 30, 0.85);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+            margin-top: 20px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(80, 100, 200, 0.3);
+        }
+        
+        .container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #ff4d4d, #ff9966, #ffcc00);
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #ffcc00;
+            text-shadow: 0 0 15px rgba(255, 204, 0, 0.7);
+            letter-spacing: 1px;
+            position: relative;
+        }
+        
+        h1::after {
+            content: "";
+            display: block;
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #ffcc00, transparent);
+            margin: 10px auto;
+        }
+        
+        .game-description {
+            text-align: center;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            color: #e0e0ff;
+            font-size: 1.1rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .game-section {
+            display: none;
+            flex-direction: column;
+        }
+        
+        .active {
+            display: flex;
+        }
+        
+        .story-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .story-card {
+            background: rgba(30, 30, 70, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .story-card:hover {
+            transform: translateY(-5px);
+            background: rgba(40, 40, 100, 0.7);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+            border-color: #ff9966;
+        }
+        
+        .story-card h3 {
+            color: #4fc3f7;
+            margin-bottom: 10px;
+            font-size: 1.4rem;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .story-card p {
+            color: #b3e5fc;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .difficulty {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 100, 100, 0.3);
+            color: #ff9999;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            z-index: 2;
+        }
+        
+        .story-title {
+            color: #4fc3f7;
+            text-align: center;
+            margin: 15px 0;
+            font-size: 1.8rem;
+            text-shadow: 0 0 10px rgba(79, 195, 247, 0.3);
+        }
+        
+        .riddle-container {
+            background: rgba(0, 20, 40, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+        
+        .riddle-container::before {
+            content: """;
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            font-size: 3rem;
+            color: rgba(255, 255, 255, 0.1);
+            font-family: Georgia, serif;
+        }
+        
+        .riddle-container h3 {
+            color: #81d4fa;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.4rem;
+            letter-spacing: 1px;
+        }
+        
+        .riddle-text {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            color: #e0f7fa;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 3px solid #ff9966;
+        }
+        
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .input-section input {
+            padding: 15px;
+            border-radius: 10px;
+            border: none;
+            background: rgba(20, 30, 60, 0.7);
+            color: white;
+            font-size: 1rem;
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            transition: all 0.3s;
+        }
+        
+        .input-section input:focus {
+            outline: none;
+            border-color: #ff9966;
+            background: rgba(30, 40, 80, 0.8);
+            box-shadow: 0 0 10px rgba(255, 153, 102, 0.3);
+        }
+        
+        .input-section input::placeholder {
+            color: rgba(200, 200, 255, 0.5);
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 14px 25px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-submit {
+            background: linear-gradient(45deg, #2196F3, #21CBF3);
+            color: white;
+        }
+        
+        .btn-guess {
+            background: linear-gradient(45deg, #FF9800, #FFC107);
+            color: white;
+        }
+        
+        .btn-giveup {
+            background: linear-gradient(45deg, #f44336, #ff7961);
+            color: white;
+        }
+        
+        .btn-restart {
+            background: linear-gradient(45deg, #4CAF50, #8BC34A);
+            color: white;
+            width: 100%;
+        }
+        
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .conversation-history {
+            margin-top: 25px;
+            background: rgba(0, 10, 30, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid rgba(100, 150, 255, 0.2);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .conversation-history h3 {
+            color: #81d4fa;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.3rem;
+        }
+        
+        .message {
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+            position: relative;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .user-message {
+            background: rgba(30, 80, 180, 0.4);
+            border-left: 4px solid #2196F3;
+        }
+        
+        .user-message::before {
+            content: "你:";
+            font-weight: bold;
+            margin-right: 8px;
+            color: #4fc3f7;
+        }
+        
+        .ai-message {
+            background: rgba(180, 50, 50, 0.4);
+            border-left: 4px solid #FF5252;
+        }
+        
+        .ai-message::before {
+            content: "裁判:";
+            font-weight: bold;
+            margin-right: 8px;
+            color: #ff9966;
+        }
+        
+        .result-message {
+            background: rgba(40, 180, 40, 0.3);
+            border-left: 4px solid #4CAF50;
+            text-align: center;
+            font-weight: bold;
+            margin-top: 15px;
+            padding: 20px;
+            font-size: 1.2rem;
+            display: none;
+            border-radius: 10px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 25px;
+            border: 1px dashed rgba(255, 255, 255, 0.3);
+        }
+        
+        .instructions h3 {
+            color: #FFD54F;
+            margin-bottom: 12px;
+            text-align: center;
+            font-size: 1.3rem;
+        }
+        
+        .instructions ul {
+            padding-left: 25px;
+            margin-top: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 10px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            width: 100%;
+            padding: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .spooky-element {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.1;
+            z-index: -1;
+            animation: float 15s infinite linear;
+        }
+        
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(100px, 50px) rotate(90deg); }
+            50% { transform: translate(200px, 0) rotate(180deg); }
+            75% { transform: translate(100px, -50px) rotate(270deg); }
+            100% { transform: translate(0, 0) rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2.3rem;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+            
+            .story-list {
+                grid-template-columns: 1fr;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 漂浮的恐怖元素 -->
+    <div class="spooky-element" style="top: 10%; left: 5%;">👻</div>
+    <div class="spooky-element" style="top: 20%; right: 10%;">🔪</div>
+    <div class="spooky-element" style="top: 70%; left: 15%;">💀</div>
+    <div class="spooky-element" style="top: 40%; right: 5%;">🕯️</div>
+    
+    <div class="container">
+        <h1><i class="fas fa-ghost"></i> 海龟汤推理游戏</h1>
+        
+        <div class="game-description">
+            <p>你是一名侦探，需要根据不完整的故事片段，通过提问来推理出恐怖真相。</p>
+            <p>每次提问，我只能回答"是"、"否"或"不相关"。当你认为已经解开谜题时，可以尝试陈述完整故事。</p>
+        </div>
+        
+        <!-- 故事选择界面 -->
+        <div id="story-selection" class="game-section active">
+            <h2 class="story-title">请选择一个谜题开始游戏</h2>
+            
+            <div class="story-list">
+                <div class="story-card" data-id="1">
+                    <span class="difficulty">中等</span>
+                    <h3>消失的乘客</h3>
+                    <p>一辆巴士在行驶过程中，突然一名乘客消失了。警察调查后没有发现任何线索...</p>
+                </div>
+                
+                <div class="story-card" data-id="2">
+                    <span class="difficulty">困难</span>
+                    <h3>自杀的作家</h3>
+                    <p>一位著名作家被发现在自己家中自杀。他的遗书只有一句话："我终于明白了..."</p>
+                </div>
+                
+                <div class="story-card" data-id="3">
+                    <span class="difficulty">简单</span>
+                    <h3>床下的手</h3>
+                    <p>半夜，小女孩醒来，感觉床下有人。她伸手下去，摸到了一只手...</p>
+                </div>
+                
+                <div class="story-card" data-id="4">
+                    <span class="difficulty">困难</span>
+                    <h3>双胞胎的葬礼</h3>
+                    <p>一个男人参加了他双胞胎兄弟的葬礼。葬礼结束后，他遇到了一个令他心动的女人...</p>
+                </div>
+                
+                <div class="story-card" data-id="5">
+                    <span class="difficulty">中等</span>
+                    <h3>午夜电话</h3>
+                    <p>一个女人每晚都接到陌生电话，电话那头只有沉重的呼吸声。警察追踪发现...</p>
+                </div>
+                
+                <div class="story-card" data-id="6">
+                    <span class="difficulty">困难</span>
+                    <h3>照片里的人</h3>
+                    <p>一个男人在整理父亲遗物时发现一张旧照片，照片上是父亲和一个陌生孩子...</p>
+                </div>
+                
+                <div class="story-card" data-id="7">
+                    <span class="difficulty">噩梦</span>
+                    <h3>重复的梦境</h3>
+                    <p>一个女人连续一周做同一个噩梦：她被困在电梯里，电梯门打开时...</p>
+                </div>
+                
+                <div class="story-card" data-id="8">
+                    <span class="difficulty">极难</span>
+                    <h3>镜子里的脸</h3>
+                    <p>一个男人发现家里的镜子中总会出现一张不属于他的脸，而且那张脸...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 游戏界面 -->
+        <div id="game-screen" class="game-section">
+            <h2 id="current-story-title" class="story-title">消失的乘客</h2>
+            
+            <div class="riddle-container">
+                <h3>谜面</h3>
+                <div id="riddle-text" class="riddle-text">
+                    一辆载有25名乘客的巴士在高速公路上正常行驶。突然，一名乘客消失了。司机立即停车报警，警察对全车进行了彻底搜查，但没有发现任何线索。监控显示该乘客确实在车上，但没有人看到他离开。
+                </div>
+            </div>
+            
+            <div class="input-section">
+                <input type="text" id="user-input" placeholder="输入你的问题或陈述..." autocomplete="off">
+                <div class="buttons">
+                    <button id="submit-btn" class="btn-submit"><i class="fas fa-question-circle"></i> 提问</button>
+                    <button id="guess-btn" class="btn-guess"><i class="fas fa-lightbulb"></i> 陈述答案</button>
+                    <button id="giveup-btn" class="btn-giveup"><i class="fas fa-flag"></i> 认输</button>
+                </div>
+                <button id="restart-btn" class="btn-restart"><i class="fas fa-redo"></i> 重新开始游戏</button>
+            </div>
+            
+            <div class="conversation-history">
+                <h3><i class="fas fa-history"></i> 对话历史</h3>
+                <div id="conversation"></div>
+                <div id="result-message" class="result-message"></div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3><i class="fas fa-info-circle"></i> 游戏规则说明</h3>
+            <ul>
+                <li>选择一个悬疑恐怖的故事谜题开始游戏</li>
+                <li>仔细阅读谜面，思考故事中不合理的地方</li>
+                <li>通过提问获取更多信息（只能得到是/否/不相关的回答）</li>
+                <li>当你认为已经解开谜题时，可以尝试陈述完整故事</li>
+                <li>如果无法解开谜题，可以选择认输查看答案</li>
+                <li>谜底往往细思极恐且反常识，请做好心理准备</li>
+            </ul>
+        </div>
+        
+        <div class="footer">
+            <p>海龟汤文字推理游戏 | 挑战你的逻辑与心理承受能力 | 12个恐怖谜题等你解开</p>
+        </div>
+    </div>
+
+    <script>
+        // 故事数据（新增了更恐怖、反常识的故事）
+        const stories = {
+            1: {
+                title: "消失的乘客",
+                riddle: "一辆载有25名乘客的巴士在高速公路上正常行驶。突然，一名乘客消失了。司机立即停车报警，警察对全车进行了彻底搜查，但没有发现任何线索。监控显示该乘客确实在车上，但没有人看到他离开。",
+                answer: "消失的乘客是一名孕妇。她在车上突然分娩，生下了一个婴儿。因此，当警察到达时，车上变成了26人（包括婴儿），而不是25人。乘客数量增加导致看起来有人消失，实际是新生命的诞生。"
+            },
+            2: {
+                title: "自杀的作家",
+                riddle: "一位著名作家被发现在自己家中自杀。他的遗书只有一句话：'我终于明白了...'。警方调查发现，作家死前正在创作一部小说，但电脑上的最后一行文字被删除了。书桌上放着一本他年轻时写的日记。",
+                answer: "作家创作的小说情节与自己现实生活完全一致，包括即将发生的自杀。当他写到主角阅读自己童年日记发现是领养的时，突然意识到自己日记中也有完全相同的段落。他明白自己也是别人小说中的角色，命运早已被注定。绝望之下他选择了自杀。"
+            },
+            3: {
+                title: "床下的手",
+                riddle: "半夜，小女孩醒来，感觉床下有人。她伸手下去，摸到了一只手。她吓得尖叫起来，父母冲进房间打开灯，床下却空无一人。第二天，女孩在床下发现了一张纸条，上面写着：'这次是你赢了'。",
+                answer: "小女孩的哥哥在和她玩恶作剧。他事先将一只假手放在床下，然后躲在衣柜里。当小女孩尖叫、父母冲进房间时，他悄悄从衣柜溜出房间。但哥哥不知道的是，小女孩在尖叫前已经摸到了藏在床下的真人的手臂，而那张纸条是闯入者留下的。"
+            },
+            4: {
+                title: "双胞胎的葬礼",
+                riddle: "一个男人参加了他双胞胎兄弟的葬礼。葬礼结束后，他遇到了一个令他心动的女人。他们聊得很投机，男人要了女人的联系方式。一周后，男人谋杀了那个女人。为什么？",
+                answer: "男人在葬礼上遇到的女人说了一句：'你长得真像你哥哥'。但双胞胎兄弟其实是同卵双胞胎，外人根本无法分辨他们。男人意识到这个女人是唯一能分辨他们兄弟的人，而他的哥哥正是被这个女人谋杀。为了复仇，他谋杀了她。"
+            },
+            5: {
+                title: "午夜电话",
+                riddle: "一个女人每晚都接到陌生电话，电话那头只有沉重的呼吸声。警察追踪发现电话来自城市的另一个区。女人安装了来电显示，发现来电号码竟然是她自己的手机号。更可怕的是，她发现电话是从她自己的公寓打出的。",
+                answer: "打电话的人是女人的第二人格。她患有严重的人格分裂症，在夜晚会转变成另一个人格。这个人格通过备用手机给自己打电话，试图警告主人格有人入侵公寓，而实际上入侵者正是第二人格自己。"
+            },
+            6: {
+                title: "照片里的人",
+                riddle: "一个男人在整理父亲遗物时发现一张旧照片，照片上是父亲和一个陌生孩子，照片背面写着'实验对象7号'。男人开始调查，发现父亲曾是秘密研究机构的科学家。更奇怪的是，他发现自己小时候的照片和那个孩子惊人地相似。",
+                answer: "男人其实是克隆人。父亲所在的机构进行非法克隆实验，男人是父亲克隆自己的产物。照片中的孩子是克隆实验的早期失败品。父亲在遗书中透露，所有克隆体都带有致命基因缺陷，男人将在30岁生日当天死亡。而明天就是他的30岁生日。"
+            },
+            7: {
+                title: "重复的梦境",
+                riddle: "一个女人连续一周做同一个噩梦：她被困在电梯里，电梯门打开时，她看到自己躺在血泊中。每次噩梦都在这个画面结束。第七天，她决定走楼梯上班，却在楼梯间看到了梦境中的场景。",
+                answer: "女人看到的血泊场景其实是油漆桶打翻。但当她走近查看时，被躲在暗处的凶手袭击。原来凶手是她同事，因工作矛盾计划在电梯里谋杀她。因她改走楼梯，凶手改变了计划。梦境是她潜意识对危险的预警。"
+            },
+            8: {
+                title: "镜子里的脸",
+                riddle: "一个男人发现家里的镜子中总会出现一张不属于他的脸，而且那张脸一天比一天清晰。他换了所有镜子，但问题依旧存在。最后他发现那张脸其实是小时候意外溺死的双胞胎兄弟。更恐怖的是，他父母从未告诉过他有个双胞胎兄弟。",
+                answer: "男人患有卡普格拉妄想症，无法识别自己的脸。镜子中的'双胞胎兄弟'其实是他自己的脸，但心理疾病让他无法识别。父母确实隐瞒了他有双胞胎兄弟的事实——兄弟没有溺死，而是被他小时候在不知情的情况下推入水中，这段记忆被压抑了。"
+            }
+        };
+
+        // DOM元素
+        const storySelection = document.getElementById('story-selection');
+        const gameScreen = document.getElementById('game-screen');
+        const currentStoryTitle = document.getElementById('current-story-title');
+        const riddleText = document.getElementById('riddle-text');
+        const userInput = document.getElementById('user-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const guessBtn = document.getElementById('guess-btn');
+        const giveupBtn = document.getElementById('giveup-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const conversation = document.getElementById('conversation');
+        const resultMessage = document.getElementById('result-message');
+
+        // 当前游戏状态
+        let currentStoryId = null;
+        let gameSolved = false;
+
+        // 故事卡片点击事件
+        document.querySelectorAll('.story-card').forEach(card => {
+            card.addEventListener('click', () => {
+                currentStoryId = card.getAttribute('data-id');
+                const story = stories[currentStoryId];
+                
+                currentStoryTitle.textContent = story.title;
+                riddleText.textContent = story.riddle;
+                
+                storySelection.classList.remove('active');
+                gameScreen.classList.add('active');
+                
+                // 清空对话历史
+                conversation.innerHTML = '';
+                resultMessage.style.display = 'none';
+                gameSolved = false;
+                userInput.value = '';
+                userInput.focus();
+            });
+        });
+
+        // 提交问题
+        submitBtn.addEventListener('click', () => {
+            if (gameSolved) return;
+            
+            const question = userInput.value.trim();
+            if (!question) return;
+            
+            if (question.toLowerCase().includes('答案') || question.toLowerCase().includes('谜底')) {
+                addMessage(`请不要直接询问答案，请通过提问逐步推理。`, 'ai');
+                userInput.value = '';
+                return;
+            }
+            
+            addMessage(question, 'user');
+            
+            // 模拟AI回答
+            setTimeout(() => {
+                // 在实际应用中，这里应该连接大模型API
+                // 以下是模拟回答
+                const randomResponse = getSimulatedResponse(question, currentStoryId);
+                addMessage(randomResponse, 'ai');
+            }, 600);
+            
+            userInput.value = '';
+        });
+
+        // 模拟AI回答的简单逻辑
+        function getSimulatedResponse(question, storyId) {
+            const responses = {
+                1: {
+                    "孕妇": "是",
+                    "婴儿": "是",
+                    "生孩子": "是",
+                    "死亡": "否",
+                    "跳车": "否",
+                    "谋杀": "否",
+                    "隐藏": "否",
+                    "警察": "不相关"
+                },
+                2: {
+                    "小说": "是",
+                    "日记": "是",
+                    "角色": "是",
+                    "谋杀": "否",
+                    "疾病": "否",
+                    "现实": "是",
+                    "命运": "是"
+                },
+                // 其他故事的模拟回答逻辑类似
+                default: {
+                    "是": "是",
+                    "否": "否",
+                    "可能": "不相关"
+                }
+            };
+            
+            const storyResponses = responses[storyId] || responses.default;
+            const keywords = Object.keys(storyResponses);
+            
+            for (const keyword of keywords) {
+                if (question.toLowerCase().includes(keyword)) {
+                    return storyResponses[keyword];
+                }
+            }
+            
+            // 随机返回一个答案
+            const randomAnswers = ["是", "否", "不相关"];
+            return randomAnswers[Math.floor(Math.random() * randomAnswers.length)];
+        }
+
+        // 陈述答案
+        guessBtn.addEventListener('click', () => {
+            if (gameSolved) return;
+            
+            const guess = userInput.value.trim();
+            if (!guess) return;
+            
+            addMessage(`我猜测：${guess}`, 'user');
+            
+            setTimeout(() => {
+                // 在实际应用中，这里应该连接大模型API验证答案
+                // 以下是模拟验证
+                if (guess.length > 30 && Math.random() > 0.7) {
+                    showSolution();
+                } else {
+                    addMessage('你的陈述不够完整，或者有错误，请继续推理。', 'ai');
+                }
+            }, 800);
+            
+            userInput.value = '';
+        });
+
+        // 认输按钮
+        giveupBtn.addEventListener('click', () => {
+            if (gameSolved) return;
+            
+            addMessage('我认输，请告诉我谜底。', 'user');
+            
+            setTimeout(() => {
+                showSolution();
+            }, 800);
+        });
+
+        // 重新开始游戏
+        restartBtn.addEventListener('click', () => {
+            gameScreen.classList.remove('active');
+            storySelection.classList.add('active');
+        });
+
+        // 显示答案
+        function showSolution() {
+            const story = stories[currentStoryId];
+            resultMessage.innerHTML = `
+                <p><i class="fas fa-trophy"></i> 谜底揭晓</p>
+                <p><strong>${story.title}的真相：</strong></p>
+                <p style="margin: 15px 0; line-height: 1.6; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px;">${story.answer}</p>
+                <p>你准备好挑战下一个恐怖谜题了吗？</p>
+            `;
+            resultMessage.style.display = 'block';
+            gameSolved = true;
+            
+            // 滚动到底部
+            conversation.parentElement.scrollTop = conversation.parentElement.scrollHeight;
+        }
+
+        // 添加消息到对话历史
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(sender === 'user' ? 'user-message' : 'ai-message');
+            messageDiv.textContent = text;
+            
+            conversation.appendChild(messageDiv);
+            
+            // 滚动到底部
+            conversation.parentElement.scrollTop = conversation.parentElement.scrollHeight;
+        }
+
+        // 回车键提交
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                submitBtn.click();
+            }
+        });
+        
+        // 初始示例问题
+        setTimeout(() => {
+            if (storySelection.classList.contains('active')) {
+                const examples = document.createElement('div');
+                examples.innerHTML = `
+                    <div style="text-align:center; margin-top:20px; color:#aaa; font-style:italic;">
+                        试试点击"消失的乘客"开始你的第一个恐怖推理
+                    </div>
+                `;
+                storySelection.appendChild(examples);
+            }
+        }, 3000);
+    </script>
+</body>
+</html>
