@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>番茄时钟 - 专注工作助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            max-width: 450px;
+            width: 90%;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 300;
+        }
+
+        .timer-circle {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            margin: 30px auto;
+        }
+
+        .circle-bg {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            position: absolute;
+        }
+
+        .circle-progress {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: absolute;
+            background: conic-gradient(from 0deg, var(--progress-color) var(--progress), transparent var(--progress));
+            transition: all 0.3s ease;
+        }
+
+        .circle-inner {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 220px;
+            height: 220px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .time-display {
+            font-size: 48px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .mode-display {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .mode-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 8px 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            background: transparent;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .stats {
+            margin: 20px 0;
+            font-size: 18px;
+        }
+
+        .settings {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+        }
+
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .settings input {
+            width: 60px;
+            padding: 5px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-align: center;
+        }
+
+        .settings input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .work-mode {
+            --progress-color: #ff6b6b;
+        }
+
+        .short-break-mode {
+            --progress-color: #4ecdc4;
+        }
+
+        .long-break-mode {
+            --progress-color: #45b7d1;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .timer-circle {
+                width: 200px;
+                height: 200px;
+            }
+            
+            .circle-inner {
+                top: 12px;
+                left: 12px;
+                width: 176px;
+                height: 176px;
+            }
+            
+            .time-display {
+                font-size: 36px;
+            }
+            
+            .controls {
+                flex-wrap: wrap;
+            }
+            
+            .settings-row {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍅 番茄时钟</h1>
+        
+        <div class="timer-circle work-mode" id="timerCircle">
+            <div class="circle-bg"></div>
+            <div class="circle-progress" id="circleProgress"></div>
+            <div class="circle-inner">
+                <div class="time-display" id="timeDisplay">25:00</div>
+                <div class="mode-display" id="modeDisplay">工作时间</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn" id="startBtn">开始</button>
+            <button class="btn" id="pauseBtn">暂停</button>
+            <button class="btn" id="resetBtn">重置</button>
+        </div>
+
+        <div class="mode-buttons">
+            <button class="mode-btn active" data-mode="cycle">🔄 循环</button>
+            <button class="mode-btn" data-mode="work">工作</button>
+            <button class="mode-btn" data-mode="shortBreak">短休息</button>
+            <button class="mode-btn" data-mode="longBreak">长休息</button>
+        </div>
+
+        <div class="stats">
+            <div>今日完成番茄: <span id="completedPomodoros">0</span> 个</div>
+        </div>
+
+        <div class="settings">
+            <h3 style="margin-bottom: 15px;">时间设置</h3>
+            <div class="settings-row">
+                <span>工作时间:</span>
+                <input type="number" id="workTime" value="25" min="1" max="60"> 分钟
+            </div>
+            <div class="settings-row">
+                <span>短休息:</span>
+                <input type="number" id="shortBreakTime" value="5" min="1" max="30"> 分钟
+            </div>
+            <div class="settings-row">
+                <span>长休息:</span>
+                <input type="number" id="longBreakTime" value="15" min="1" max="60"> 分钟
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PomodoroTimer {
+            constructor() {
+                this.modes = {
+                    work: { time: 25, label: '工作时间', class: 'work-mode' },
+                    shortBreak: { time: 5, label: '短休息', class: 'short-break-mode' },
+                    longBreak: { time: 15, label: '长休息', class: 'long-break-mode' }
+                };
+                
+                this.currentMode = 'work';
+                this.timeLeft = this.modes[this.currentMode].time * 60;
+                this.totalTime = this.timeLeft;
+                this.isRunning = false;
+                this.timer = null;
+                this.completedPomodoros = 0;
+                this.elapsedTime = 0;
+                this.lastDate = this.getCurrentDate();
+                this.cycleMode = true; // 强制默认开启循环模式
+                this.tickSoundEnabled = true; // 恢复秒针音效控制
+                this.backgroundMusic = null; // 恢复背景音乐控制
+                
+                this.initElements();
+                this.initEventListeners();
+                this.loadSettings();
+                this.checkDateChange();
+                this.updateDisplay();
+                this.updateModeButtons(); // 确保按钮状态正确
+                
+                console.log('初始化完成，循环模式:', this.cycleMode);
+            }
+
+            initElements() {
+                this.timeDisplay = document.getElementById('timeDisplay');
+                this.modeDisplay = document.getElementById('modeDisplay');
+                this.circleProgress = document.getElementById('circleProgress');
+                this.timerCircle = document.getElementById('timerCircle');
+                this.startBtn = document.getElementById('startBtn');
+                this.pauseBtn = document.getElementById('pauseBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                this.completedDisplay = document.getElementById('completedPomodoros');
+                this.workTimeInput = document.getElementById('workTime');
+                this.shortBreakTimeInput = document.getElementById('shortBreakTime');
+                this.longBreakTimeInput = document.getElementById('longBreakTime');
+            }
+
+            initEventListeners() {
+                this.startBtn.addEventListener('click', () => this.start());
+                this.pauseBtn.addEventListener('click', () => this.pause());
+                this.resetBtn.addEventListener('click', () => this.reset());
+                
+                document.querySelectorAll('.mode-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const mode = e.target.dataset.mode;
+                        if (mode === 'cycle') {
+                            this.enableCycleMode();
+                        } else {
+                            this.switchToManualMode(mode);
+                        }
+                    });
+                });
+
+                [this.workTimeInput, this.shortBreakTimeInput, this.longBreakTimeInput].forEach(input => {
+                    input.addEventListener('change', () => this.updateSettings());
+                });
+            }
+
+            getCurrentDate() {
+                const now = new Date();
+                return now.getFullYear() + '-' + 
+                       String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                       String(now.getDate()).padStart(2, '0');
+            }
+
+            checkDateChange() {
+                const currentDate = this.getCurrentDate();
+                if (this.lastDate !== currentDate) {
+                    this.completedPomodoros = 0;
+                    this.lastDate = currentDate;
+                    this.completedDisplay.textContent = this.completedPomodoros;
+                    this.saveSettings();
+                }
+            }
+
+            enableCycleMode() {
+                console.log('启用循环模式');
+                this.cycleMode = true;
+                this.currentMode = 'work';
+                this.timeLeft = this.modes[this.currentMode].time * 60;
+                this.totalTime = this.timeLeft;
+                this.elapsedTime = 0;
+                this.timerCircle.className = `timer-circle ${this.modes[this.currentMode].class}`;
+                this.updateDisplay();
+                this.updateModeButtons();
+                this.saveSettings();
+            }
+
+            switchToManualMode(mode) {
+                console.log('切换到手动模式:', mode);
+                this.pause();
+                this.cycleMode = false;
+                this.currentMode = mode;
+                this.timeLeft = this.modes[mode].time * 60;
+                this.totalTime = this.timeLeft;
+                this.elapsedTime = 0;
+                this.timerCircle.className = `timer-circle ${this.modes[mode].class}`;
+                this.updateDisplay();
+                this.updateModeButtons();
+                this.saveSettings();
+            }
+
+            updateModeButtons() {
+                document.querySelectorAll('.mode-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                
+                if (this.cycleMode) {
+                    document.querySelector('[data-mode="cycle"]').classList.add('active');
+                } else {
+                    const currentBtn = document.querySelector(`[data-mode="${this.currentMode}"]`);
+                    if (currentBtn) currentBtn.classList.add('active');
+                }
+            }
+
+            start() {
+                if (!this.isRunning) {
+                    this.checkDateChange();
+                    this.isRunning = true;
+                    this.timer = setInterval(() => this.tick(), 1000);
+                    this.startBtn.textContent = '运行中';
+                    this.startBtn.style.opacity = '0.6';
+                    
+                    // 恢复背景音乐
+                    this.playBackgroundMusic();
+                }
+            }
+
+            pause() {
+                if (this.isRunning) {
+                    this.isRunning = false;
+                    clearInterval(this.timer);
+                    this.startBtn.textContent = '开始';
+                    this.startBtn.style.opacity = '1';
+                    
+                    // 停止背景音乐
+                    this.stopBackgroundMusic();
+                }
+            }
+
+            reset() {
+                this.pause();
+                this.timeLeft = this.modes[this.currentMode].time * 60;
+                this.totalTime = this.timeLeft;
+                this.elapsedTime = 0;
+                this.updateDisplay();
+            }
+
+            tick() {
+                if (this.timeLeft > 0) {
+                    this.timeLeft--;
+                    this.elapsedTime++;
+                    this.updateDisplay();
+                    
+                    // 恢复秒针音效
+                    if (this.tickSoundEnabled) {
+                        this.playTickSound();
+                    }
+                } else {
+                    this.complete();
+                }
+            }
+
+            complete() {
+                this.pause();
+                this.playNotification();
+                
+                if (this.currentMode === 'work') {
+                    this.completedPomodoros++;
+                    this.completedDisplay.textContent = this.completedPomodoros;
+                    this.saveSettings();
+                }
+                
+                this.showNotification();
+                
+                console.log('时间结束！当前模式:', this.currentMode, '循环模式:', this.cycleMode);
+                
+                // 核心循环逻辑 - 如果开启循环模式就自动切换
+                if (this.cycleMode) {
+                    console.log('开始自动切换...');
+                    
+                    // 播放切换提示音乐
+                    this.playTransitionMusic();
+                    
+                    setTimeout(() => {
+                        const nextMode = this.currentMode === 'work' ? 'shortBreak' : 'work';
+                        console.log('切换到:', nextMode);
+                        
+                        this.currentMode = nextMode;
+                        this.timeLeft = this.modes[nextMode].time * 60;
+                        this.totalTime = this.timeLeft;
+                        this.elapsedTime = 0;
+                        this.timerCircle.className = `timer-circle ${this.modes[nextMode].class}`;
+                        this.updateDisplay();
+                        
+                        console.log('自动开始新阶段');
+                        this.start();
+                    }, 3000); // 延长到3秒，让用户听完提示音乐
+                }
+            }
+
+            updateDisplay() {
+                const minutes = Math.floor(this.timeLeft / 60);
+                const seconds = this.timeLeft % 60;
+                this.timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                this.modeDisplay.textContent = this.modes[this.currentMode].label;
+                
+                const progress = ((this.totalTime - this.timeLeft) / this.totalTime) * 360;
+                this.circleProgress.style.setProperty('--progress', `${progress}deg`);
+                
+                const cycleText = this.cycleMode ? ' (循环)' : '';
+                document.title = `${this.timeDisplay.textContent} - ${this.modes[this.currentMode].label} (倒计时)${cycleText}`;
+            }
+
+            updateSettings() {
+                this.modes.work.time = parseInt(this.workTimeInput.value) || 25;
+                this.modes.shortBreak.time = parseInt(this.shortBreakTimeInput.value) || 5;
+                this.modes.longBreak.time = parseInt(this.longBreakTimeInput.value) || 15;
+                
+                if (!this.isRunning) {
+                    this.timeLeft = this.modes[this.currentMode].time * 60;
+                    this.totalTime = this.timeLeft;
+                    this.elapsedTime = 0;
+                    this.updateDisplay();
+                }
+                this.saveSettings();
+            }
+
+            saveSettings() {
+                localStorage.setItem('pomodoroSettings', JSON.stringify({
+                    workTime: this.modes.work.time,
+                    shortBreakTime: this.modes.shortBreak.time,
+                    longBreakTime: this.modes.longBreak.time,
+                    completedPomodoros: this.completedPomodoros,
+                    lastDate: this.lastDate,
+                    cycleMode: this.cycleMode
+                }));
+            }
+
+            loadSettings() {
+                const saved = localStorage.getItem('pomodoroSettings');
+                if (saved) {
+                    const settings = JSON.parse(saved);
+                    this.modes.work.time = settings.workTime || 25;
+                    this.modes.shortBreak.time = settings.shortBreakTime || 5;
+                    this.modes.longBreak.time = settings.longBreakTime || 15;
+                    this.completedPomodoros = settings.completedPomodoros || 0;
+                    this.lastDate = settings.lastDate || this.getCurrentDate();
+                    // 强制保持循环模式为默认
+                    this.cycleMode = settings.cycleMode !== undefined ? settings.cycleMode : true;
+                    
+                    this.workTimeInput.value = this.modes.work.time;
+                    this.shortBreakTimeInput.value = this.modes.shortBreak.time;
+                    this.longBreakTimeInput.value = this.modes.longBreak.time;
+                    this.completedDisplay.textContent = this.completedPomodoros;
+                    
+                    this.timeLeft = this.modes[this.currentMode].time * 60;
+                    this.totalTime = this.timeLeft;
+                    this.elapsedTime = 0;
+                }
+            }
+
+            playNotification() {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                    oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+                    
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.3);
+                } catch (error) {
+                    console.log('无法播放提示音:', error);
+                }
+            }
+
+            showNotification() {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('番茄时钟提醒', {
+                        body: `${this.modes[this.currentMode].label}结束了！`,
+                        icon: '🍅'
+                    });
+                }
+            }
+
+            // 恢复秒针移动音效
+            playTickSound() {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    // 轻微的滴答声
+                    oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
+                    oscillator.type = 'sine';
+                    
+                    gainNode.gain.setValueAtTime(0.05, audioContext.currentTime); // 很小的音量
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.05);
+                } catch (error) {
+                    console.log('无法播放秒针音效:', error);
+                }
+            }
+
+            // 恢复播放背景音乐
+            playBackgroundMusic() {
+                this.stopBackgroundMusic(); // 先停止之前的音乐
+                
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    if (this.currentMode === 'work') {
+                        // 工作模式：播放严肃的专注音乐
+                        this.playWorkMusic(audioContext);
+                    } else {
+                        // 休息模式：播放轻松欢快的音乐
+                        this.playBreakMusic(audioContext);
+                    }
+                } catch (error) {
+                    console.log('无法播放背景音乐:', error);
+                }
+            }
+
+            // 恢复播放工作音乐（严肃风格）
+            playWorkMusic(audioContext) {
+                const oscillator1 = audioContext.createOscillator();
+                const oscillator2 = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator1.connect(gainNode);
+                oscillator2.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // 创建严肃、专注的低频音调
+                oscillator1.frequency.setValueAtTime(110, audioContext.currentTime); // A2
+                oscillator2.frequency.setValueAtTime(165, audioContext.currentTime); // E3
+                
+                oscillator1.type = 'sine';
+                oscillator2.type = 'triangle';
+                
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 1);
+                gainNode.gain.linearRampToValueAtTime(0.05, audioContext.currentTime + 3);
+                gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 5);
+                
+                oscillator1.start(audioContext.currentTime);
+                oscillator2.start(audioContext.currentTime);
+                oscillator1.stop(audioContext.currentTime + 5);
+                oscillator2.stop(audioContext.currentTime + 5);
+            }
+
+            // 恢复播放休息音乐（欢快风格）
+            playBreakMusic(audioContext) {
+                const notes = [261.63, 293.66, 329.63, 392.00]; // C4, D4, E4, G4
+                let noteIndex = 0;
+                
+                const playNote = (time, duration) => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(notes[noteIndex % notes.length], time);
+                    oscillator.type = 'square';
+                    
+                    gainNode.gain.setValueAtTime(0, time);
+                    gainNode.gain.linearRampToValueAtTime(0.1, time + 0.1);
+                    gainNode.gain.linearRampToValueAtTime(0, time + duration);
+                    
+                    oscillator.start(time);
+                    oscillator.stop(time + duration);
+                    
+                    noteIndex++;
+                };
+                
+                // 播放欢快的旋律
+                for (let i = 0; i < 8; i++) {
+                    playNote(audioContext.currentTime + i * 0.3, 0.25);
+                }
+            }
+
+            // 恢复停止背景音乐
+            stopBackgroundMusic() {
+                if (this.backgroundMusic) {
+                    try {
+                        this.backgroundMusic.close();
+                    } catch (error) {
+                        console.log('停止音乐时出错:', error);
+                    }
+                    this.backgroundMusic = null;
+                }
+            }
+
+            // 恢复播放阶段切换提示音乐
+            playTransitionMusic() {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    if (this.currentMode === 'work') {
+                        // 工作结束，进入休息：播放轻松的音乐
+                        this.playWorkToBreakMusic(audioContext);
+                    } else {
+                        // 休息结束，进入工作：播放激励的音乐
+                        this.playBreakToWorkMusic(audioContext);
+                    }
+                } catch (error) {
+                    console.log('无法播放切换音乐:', error);
+                }
+            }
+
+            // 恢复工作结束进入休息的音乐（轻松、舒缓）
+            playWorkToBreakMusic(audioContext) {
+                const notes = [523.25, 587.33, 659.25, 783.99]; // C5, D5, E5, G5 - 上行大调音阶
+                
+                notes.forEach((frequency, index) => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime + index * 0.3);
+                    oscillator.type = 'sine'; // 温和的正弦波
+                    
+                    const startTime = audioContext.currentTime + index * 0.3;
+                    gainNode.gain.setValueAtTime(0, startTime);
+                    gainNode.gain.linearRampToValueAtTime(0.15, startTime + 0.1);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.6);
+                    
+                    oscillator.start(startTime);
+                    oscillator.stop(startTime + 0.6);
+                });
+                
+                // 添加和声
+                setTimeout(() => {
+                    const harmony = audioContext.createOscillator();
+                    const harmonyGain = audioContext.createGain();
+                    
+                    harmony.connect(harmonyGain);
+                    harmonyGain.connect(audioContext.destination);
+                    
+                    harmony.frequency.setValueAtTime(391.99, audioContext.currentTime); // G4
+                    harmony.type = 'triangle';
+                    
+                    harmonyGain.gain.setValueAtTime(0, audioContext.currentTime);
+                    harmonyGain.gain.linearRampToValueAtTime(0.1, audioContext.currentTime + 0.2);
+                    harmonyGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 1.5);
+                    
+                    harmony.start(audioContext.currentTime);
+                    harmony.stop(audioContext.currentTime + 1.5);
+                }, 200);
+            }
+
+            // 恢复休息结束进入工作的音乐（激励、振奋）
+            playBreakToWorkMusic(audioContext) {
+                const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5 - C大调和弦上行
+                
+                // 主旋律 - 更有力的音符
+                notes.forEach((frequency, index) => {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime + index * 0.25);
+                    oscillator.type = 'square'; // 更有力的方波
+                    
+                    const startTime = audioContext.currentTime + index * 0.25;
+                    gainNode.gain.setValueAtTime(0, startTime);
+                    gainNode.gain.linearRampToValueAtTime(0.2, startTime + 0.05);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.4);
+                    
+                    oscillator.start(startTime);
+                    oscillator.stop(startTime + 0.4);
+                });
+                
+                // 添加鼓点效果
+                setTimeout(() => {
+                    for (let i = 0; i < 3; i++) {
+                        const drumTime = audioContext.currentTime + i * 0.3;
+                        
+                        // 低频鼓点
+                        const drum = audioContext.createOscillator();
+                        const drumGain = audioContext.createGain();
+                        
+                        drum.connect(drumGain);
+                        drumGain.connect(audioContext.destination);
+                        
+                        drum.frequency.setValueAtTime(80, drumTime);
+                        drum.type = 'sawtooth';
+                        
+                        drumGain.gain.setValueAtTime(0.3, drumTime);
+                        drumGain.gain.exponentialRampToValueAtTime(0.01, drumTime + 0.15);
+                        
+                        drum.start(drumTime);
+                        drum.stop(drumTime + 0.15);
+                    }
+                }, 500);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new PomodoroTimer();
+        });
+
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    </script>
+</body>
+</html>
